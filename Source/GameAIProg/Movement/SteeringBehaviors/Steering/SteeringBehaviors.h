@@ -26,3 +26,22 @@ protected:
 };
 
 // Your own SteeringBehaviors should follow here...
+class Seek : public ISteeringBehavior
+{
+	public:
+	Seek() = default;
+	virtual ~Seek() = default;
+	
+	// steering
+	
+	virtual SteeringOutput CalculateSteering(float DeltaT, ASteeringAgent & Agent) override;
+};
+
+class Flee : public ISteeringBehavior
+{
+public:
+	Flee() = default;
+	virtual ~Flee() = default;
+	
+	virtual SteeringOutput CalculateSteering(float DeltaT, ASteeringAgent & Agent) override;
+};
