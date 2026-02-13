@@ -4,6 +4,7 @@
 
 #include "VectorTypes.h"
 #include "GameAIProg/Movement/SteeringBehaviors/SteeringAgent.h"
+#include "GameFramework/GameNetworkManager.h"
 
 //SEEK
 //*******
@@ -28,12 +29,15 @@ SteeringOutput Seek::CalculateSteering(float DeltaT, ASteeringAgent & Agent)
 			radius, circleSegments, FColor::Red, false, -1, 0, 0, 
 			FVector(0,1,0), FVector(1,0,0), true);
 		
+		// Forward Vector
 		const FVector lineStart{Agent.GetPosition(), 10};
 		constexpr float lineLengthDevider{4.f};
 		const FVector lineEnd{Agent.GetPosition() + Agent.GetLinearVelocity() / lineLengthDevider, 10};
 		DrawDebugLine(Agent.GetWorld(), lineStart, lineEnd, FColor::Purple);
 		
-		
+		// Direction to Target
+		const FVector lineEnd2{Target.Position.X, Target.Position.Y, 10};
+		DrawDebugLine(Agent.GetWorld(), lineStart, lineEnd2, FColor::Green);
 	}
 	
 	return Steering;
@@ -166,7 +170,32 @@ SteeringOutput Wander::CalculateSteering(float DeltaT, ASteeringAgent & Agent)
 {
 	SteeringOutput Steering{};
 	
+	constexpr float distance{200.f};
+	const FVector circleCenter{FVector(Agent.GetPosition().X, Agent.GetPosition().Y, 10) + Agent.GetActorForwardVector() * distance};
+	constexpr float circleRadius{150.f};
 	
+	const float randomAngle{(std::rand()%360) * PI / 180.f };
+	const FVector2D randomTarget{circleCenter.X + circleRadius * cos(randomAngle),
+								 circleCenter.Y + circleRadius * sin(randomAngle)};
 	
+	Steering.LinearVelocity = randomTarget - Agent.GetPosition();
+	
+	if (Agent.GetDebugRenderingEnabled())
+	{
+		// ForwardVector
+		const FVector lineStart{Agent.GetPosition(), 10};
+		DrawDebugLine(Agent.GetWorld(), lineStart, circleCenter, FColor::Purple);
+		
+		// Wander Circle
+		constexpr int circleSegments{20};
+		DrawDebugCircle(Agent.GetWorld(), FVector(circleCenter.X, circleCenter.Y, 10.f),
+		circleRadius, circleSegments, FColor::Blue, false, -1, 0, 0, 
+		FVector(0,1,0), FVector(1,0,0), false);
+		
+		// Target
+		DrawDebugCircle(Agent.GetWorld(), FVector(randomTarget.X, randomTarget.Y, 11.f),
+		10.f, circleSegments, FColor::Green, false, -1, 0, 0, 
+		FVector(0,1,0), FVector(1,0,0), false);
+	}
 	return Steering;
 }
