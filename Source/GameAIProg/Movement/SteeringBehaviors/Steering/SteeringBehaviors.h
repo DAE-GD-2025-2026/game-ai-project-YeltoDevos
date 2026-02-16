@@ -23,6 +23,10 @@ public:
 
 protected:
 	FTargetData Target;
+	virtual void DrawTarget(const UWorld * World, const float circleRadius = 20.f, const int circleSegments = 20);
+	virtual void DrawTarget(const UWorld * World, const FVector2D targetPos, const float circleRadius = 20.f, const int circleSegments = 20);
+	virtual void DrawForwardVelocity(const ASteeringAgent& Agent);
+	virtual void DrawDesiredDirection(const ASteeringAgent& Agent);
 };
 
 // Your own SteeringBehaviors should follow here...
@@ -81,6 +85,15 @@ class Wander : public ISteeringBehavior
 public:
 	Wander() = default;
 	virtual ~Wander() = default;
+	
+	virtual SteeringOutput CalculateSteering(float DeltaT, ASteeringAgent & Agent) override;
+};
+
+class Face : public ISteeringBehavior
+{
+public:
+	Face() = default;
+	virtual ~Face() = default;
 	
 	virtual SteeringOutput CalculateSteering(float DeltaT, ASteeringAgent & Agent) override;
 };
