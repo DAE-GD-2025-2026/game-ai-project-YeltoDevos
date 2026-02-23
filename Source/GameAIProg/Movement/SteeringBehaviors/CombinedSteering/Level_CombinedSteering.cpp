@@ -14,15 +14,27 @@ ALevel_CombinedSteering::ALevel_CombinedSteering()
 void ALevel_CombinedSteering::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
+	std::vector<BlendedSteering::WeightedBehavior> vectorWB{};
+	
+	pSeek = new Seek();
+	BlendedSteering::WeightedBehavior wb = BlendedSteering::WeightedBehavior(pSeek, .2f);
+	vectorWB.push_back(wb);
+	
+	pWander = new Wander();
+	wb = BlendedSteering::WeightedBehavior(pWander, .8f);
+	vectorWB.push_back(wb);
+	
+	pBlendedSteering = new BlendedSteering{vectorWB};
+	
+	pAgent = GetWorld()->SpawnActor<ASteeringAgent>(SteeringAgentClass, FVector{ 0,0,90 }, FRotator::ZeroRotator);
+	pAgent->SetSteeringBehavior(pBlendedSteering);
+	
 }
 
 void ALevel_CombinedSteering::BeginDestroy()
 {
 	Super::BeginDestroy();
-
-	AddAgent(BehaviorTypes::Seek);
-	SteeringAgents[0].Agent->SetDebugRenderingEnabled(true);
 }
 
 // Called every frame
@@ -87,13 +99,13 @@ void ALevel_CombinedSteering::Tick(float DeltaTime)
 		ImGui::Spacing();
 
 
-		// ImGuiHelpers::ImGuiSliderFloatWithSetter("Seek",
-		// 	pBlendedSteering->GetWeightedBehaviorsRef()[0].Weight, 0.f, 1.f,
-		// 	[this](float InVal) { pBlendedSteering->GetWeightedBehaviorsRef()[0].Weight = InVal; }, "%.2f");
-		//
-		// ImGuiHelpers::ImGuiSliderFloatWithSetter("Wander",
-		// pBlendedSteering->GetWeightedBehaviorsRef()[1].Weight, 0.f, 1.f,
-		// [this](float InVal) { pBlendedSteering->GetWeightedBehaviorsRef()[1].Weight = InVal; }, "%.2f");
+		ImGuiHelpers::ImGuiSliderFloatWithSetter("Seek",
+			pBlendedSteering->GetWeightedBehaviorsRef()[0].Weight, 0.f, 1.f,
+			[this](float InVal) { pBlendedSteering->GetWeightedBehaviorsRef()[0].Weight = InVal; }, "%.2f");
+		
+		ImGuiHelpers::ImGuiSliderFloatWithSetter("Wander",
+		pBlendedSteering->GetWeightedBehaviorsRef()[1].Weight, 0.f, 1.f,
+		[this](float InVal) { pBlendedSteering->GetWeightedBehaviorsRef()[1].Weight = InVal; }, "%.2f");
 	
 		//End
 		ImGui::End();
@@ -102,5 +114,7 @@ void ALevel_CombinedSteering::Tick(float DeltaTime)
 	
 	// Combined Steering Update
  // TODO: implement handling mouse click input for seek
+	pSeek->SetTarget(MouseTarget);
+	
  // TODO: implement Make sure to also evade the wanderer
 }

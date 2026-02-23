@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <memory>
 #include "CoreMinimal.h"
 #include "CombinedSteeringBehaviors.h"
 #include "GameAIProg/Shared/Level_Base.h"
@@ -31,6 +32,10 @@ private:
 	//Datamembers
 	bool UseMouseTarget = false;
 	bool CanDebugRender = false;
-
 	
+	ASteeringAgent* pAgent{};
+
+	Seek* pSeek;
+	Wander* pWander;
+	BlendedSteering* pBlendedSteering {};
 };
