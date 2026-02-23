@@ -30,6 +30,19 @@ void ALevel_CombinedSteering::BeginPlay()
 	pAgent = GetWorld()->SpawnActor<ASteeringAgent>(SteeringAgentClass, FVector{ 0,0,90 }, FRotator::ZeroRotator);
 	pAgent->SetSteeringBehavior(pBlendedSteering);
 	
+	
+	std::vector<ISteeringBehavior*> steeringVector{};
+	
+	pEvade = new Evade();
+	FTargetData data{pAgent->GetPosition()};
+	pEvade->SetTarget(data);
+	
+	steeringVector.push_back(pEvade);
+	steeringVector.push_back(pWander);
+	
+	pPrioritySteering = new PrioritySteering(steeringVector);
+	pAgentPriority = GetWorld()->SpawnActor<ASteeringAgent>(SteeringAgentClass, FVector{ 0,0,90 }, FRotator::ZeroRotator);
+	pAgentPriority->SetSteeringBehavior(pPrioritySteering);
 }
 
 void ALevel_CombinedSteering::BeginDestroy()
@@ -82,6 +95,8 @@ void ALevel_CombinedSteering::Tick(float DeltaTime)
 		if (ImGui::Checkbox("Debug Rendering", &CanDebugRender))
 		{
    // TODO: Handle the debug rendering of your agents here :)
+			pAgent->SetDebugRenderingEnabled(CanDebugRender);
+			pAgentPriority->SetDebugRenderingEnabled(CanDebugRender);
 		}
 		ImGui::Checkbox("Trim World", &TrimWorld->bShouldTrimWorld);
 		if (TrimWorld->bShouldTrimWorld)
@@ -116,5 +131,10 @@ void ALevel_CombinedSteering::Tick(float DeltaTime)
  // TODO: implement handling mouse click input for seek
 	pSeek->SetTarget(MouseTarget);
 	
+	
+	
  // TODO: implement Make sure to also evade the wanderer
+	
+	FTargetData data{pAgent->GetPosition(), 0, pAgent->GetLinearVelocity()};
+	pEvade->SetTarget(data);
 }

@@ -38,4 +38,9 @@ private:
 	Seek* pSeek;
 	Wander* pWander;
 	BlendedSteering* pBlendedSteering {};
+	
+	ASteeringAgent* pAgentPriority{};
+	
+	Evade* pEvade{};
+	PrioritySteering* pPrioritySteering{};
 };
