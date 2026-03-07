@@ -43,6 +43,9 @@ CellSpace::CellSpace(UWorld* pWorld, float Width, float Height, int Rows, int Co
 	CellHeight = Height / Rows;
 
 	// TODO create the cells
+	
+	Cells.reserve(Rows * Cols);
+	
 }
 
 void CellSpace::AddAgent(ASteeringAgent& Agent)

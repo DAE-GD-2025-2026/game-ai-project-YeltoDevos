@@ -56,6 +56,8 @@ SteeringOutput Seek::CalculateSteering(float DeltaT, ASteeringAgent & Agent)
 		DrawDesiredDirection(Agent);
 	}
 	
+	Steering.LinearVelocity.Normalize();
+	
 	return Steering;
 }
 
@@ -75,6 +77,7 @@ SteeringOutput Flee::CalculateSteering(float DeltaT, ASteeringAgent & Agent)
 		DrawForwardVelocity(Agent);
 	}
 	
+	Steering.LinearVelocity.Normalize();
 	return Steering;
 }
 
@@ -125,6 +128,7 @@ SteeringOutput Arrive::CalculateSteering(float DeltaT, ASteeringAgent & Agent)
 		DrawForwardVelocity(Agent);
 	}
 	
+	Steering.LinearVelocity.Normalize();
 	return Steering;
 }
 
@@ -147,6 +151,8 @@ SteeringOutput Pursuit::CalculateSteering(float DeltaT, ASteeringAgent & Agent)
 		
 		DrawForwardVelocity(Agent);
 	}
+	
+	Steering.LinearVelocity.Normalize();
 	return Steering;
 }
 
@@ -155,20 +161,20 @@ SteeringOutput Evade::CalculateSteering(float DeltaT, ASteeringAgent & Agent)
 	SteeringOutput Steering{};
 	
 	const float distanceTotTarget{static_cast<float>((Target.Position - Agent.GetPosition()).Length())};
-	const float timeToTarget{distanceTotTarget / static_cast<float>(Target.LinearVelocity.Length())};
+	const float timeToTarget{distanceTotTarget / static_cast<float>(std::max(Target.LinearVelocity.Length(), 1.0))};
 	
 	const FVector2D predictionDistance{Target.LinearVelocity * timeToTarget};
 	const FVector2D predicitonTargetPos{Target.Position + predictionDistance};
 	
 	const float distanceToPredictedTarget{static_cast<float>((predicitonTargetPos - Agent.GetPosition()).Length())};
-	constexpr float evadeDistance{200.f};
-	if (evadeDistance < distanceToPredictedTarget)
+	constexpr float evadeDistance{300.f};
+	if (evadeDistance > distanceToPredictedTarget)
 	{
-		Steering.IsValid = false;
+		Steering.IsValid = true;
 	}
 	else
 	{
-		Steering.IsValid = true;
+		Steering.IsValid = false;
 	}
 	
 	
@@ -188,6 +194,8 @@ SteeringOutput Evade::CalculateSteering(float DeltaT, ASteeringAgent & Agent)
 evadeDistance, circleSegments, FColor::Yellow, false, -1, 0, 0, 
 FVector(0,1,0), FVector(1,0,0), false);
 	}
+	
+	Steering.LinearVelocity.Normalize();
 	return Steering;
 }
 
@@ -221,6 +229,8 @@ SteeringOutput Wander::CalculateSteering(float DeltaT, ASteeringAgent & Agent)
 		DrawTarget(Agent.GetWorld(), randomTarget, 10.f);
 		DrawForwardVelocity(Agent);
 	}
+	
+	Steering.LinearVelocity.Normalize();
 	return Steering;
 }
 
@@ -247,8 +257,6 @@ SteeringOutput Face::CalculateSteering(float DeltaT, ASteeringAgent& Agent)
 		Steering.AngularVelocity = -speed;
 	}
 	
-
-	
-	
+	Steering.LinearVelocity.Normalize();
 	return Steering;
 }
