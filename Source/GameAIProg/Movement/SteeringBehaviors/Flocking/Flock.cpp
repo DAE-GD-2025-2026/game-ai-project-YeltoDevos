@@ -62,7 +62,23 @@ Flock::Flock(
 		agent->SetDebugRenderingEnabled(false);
 	}
 	
+#ifdef GAMEAI_USE_SPACE_PARTITIONING
+	
+	pPartitionedSpace = std::make_unique<CellSpace>(pWorld, WorldSize * 2, WorldSize * 2, NrOfCellsX, NrOfCellsX, 20);
+	
+	for (ASteeringAgent* agent: Agents)
+	{
+		pPartitionedSpace->AddAgent(*agent);
+	}
+	
+	OldPositions.SetNum(FlockSize);
+	for (std::size_t i{0}; i < FlockSize; i++)
+	{
+		OldPositions[i] = Agents[i]->GetPosition();
+	}
+#endif
 }
+
 
 Flock::~Flock()
 {
@@ -77,26 +93,50 @@ void Flock::Tick(float DeltaTime)
   // TODO: update the agent (-> the steeringbehaviors use the neighbors in the memory pool)
   // TODO: trim the agent to the world
 	
-	for (ASteeringAgent* agent: Agents)
+	if (UseSpatialPartition)
 	{
-		if (agent != nullptr)
+		for (std::size_t i{0}; i < FlockSize; i++)
 		{
-			RegisterNeighbors(agent);
-			agent->Tick(DeltaTime);
+			pPartitionedSpace->UpdateAgentCell(*Agents[i], OldPositions[i]);
+			pPartitionedSpace->RegisterNeighbors(*Agents[i], NeighborhoodRadius);
+			
+			Neighbors = pPartitionedSpace->GetNeighbors();
+			NrOfNeighbors = pPartitionedSpace->GetNrOfNeighbors();
+			
+			Agents[i]->Tick(DeltaTime);
+			OldPositions[i] = Agents[i]->GetPosition();
+		}
+		
+	}
+	else
+	{
+		for (ASteeringAgent* agent: Agents)
+		{
+			if (agent != nullptr)
+			{
+				RegisterNeighbors(agent);
+				agent->Tick(DeltaTime);
+			}
 		}
 	}
-	
+
 	SetTarget_Seek(MouseTarget);
 	pEvadeBehavior->SetTarget(FTargetData(pAgentToEvade->GetPosition()));
-	
 	RenderDebug();
 }
 
 void Flock::RenderDebug()
 {
  // TODO: Render all the agents in the flock
-	RenderNeighborhood();
+	if (DebugRenderNeighborhood)
+	{
+		RenderNeighborhood();
+	}
 	
+	if (DebugRenderPartitions)
+	{
+		pPartitionedSpace->RenderCells();
+	}
 }
 
 void Flock::ImGuiRender(ImVec2 const& WindowPos, ImVec2 const& WindowSize)
@@ -136,6 +176,10 @@ void Flock::ImGuiRender(ImVec2 const& WindowPos, ImVec2 const& WindowSize)
 
 		ImGui::Text("Flocking");
 		ImGui::Spacing();
+		
+		ImGui::Checkbox("Use SpatialPartition", &UseSpatialPartition);
+		ImGui::Checkbox("Draw Neighborhood", &DebugRenderNeighborhood);
+		ImGui::Checkbox("Draw Partitions", &DebugRenderPartitions);
 
   // TODO: implement ImGUI checkboxes for debug rendering here
 
@@ -177,20 +221,27 @@ void Flock::RenderNeighborhood()
  // TODO: Debugrender the neighbors for the first agent in the flock
 	ASteeringAgent* agent = Agents[0];
 	
-	RegisterNeighbors(agent);
+	if (UseSpatialPartition)
+	{
+		pPartitionedSpace->RegisterNeighbors(*agent, NeighborhoodRadius);
+	}
+	else
+	{
+		RegisterNeighbors(agent);
+	}
 	
 	constexpr int circleSegments{20};
 	DrawDebugCircle(agent->GetWorld(), FVector(agent->GetPosition(), 20.f),
-NeighborhoodRadius, circleSegments, FColor::Yellow, false, -1, 0, 0, 
-FVector(0,1,0), FVector(1,0,0), false);
+	NeighborhoodRadius, circleSegments, FColor::Yellow, false, -1, 0, 0, 
+	FVector(0,1,0), FVector(1,0,0), false);
 	
-	for (ASteeringAgent* neighbor : Neighbors)
+	for (ASteeringAgent* neighbor : GetNeighbors())
 	{
 		DrawDebugLine(pWorld, FVector(agent->GetPosition(), 10.f), FVector(neighbor->GetPosition(), 10.f), FColor::Red);
 	}
 }
 
-#ifndef GAMEAI_USE_SPACE_PARTITIONING
+
 void Flock::RegisterNeighbors(ASteeringAgent* const pAgent)
 {
  // TODO: Implement
@@ -211,7 +262,7 @@ void Flock::RegisterNeighbors(ASteeringAgent* const pAgent)
 	
 	Neighbors.Shrink();
 }
-#endif
+
 
 FVector2D Flock::GetAverageNeighborPos() const
 {
@@ -219,12 +270,12 @@ FVector2D Flock::GetAverageNeighborPos() const
 
  // TODO: Implement
 	
-	for (ASteeringAgent* neighbor : Neighbors)
+	for (ASteeringAgent* neighbor : GetNeighbors())
 	{
 		avgPosition += neighbor->GetPosition();
 	}
 	
-	avgPosition /= NrOfNeighbors;
+	avgPosition /= GetNrOfNeighbors();
 	
 	return avgPosition;
 }
@@ -235,12 +286,12 @@ FVector2D Flock::GetAverageNeighborVelocity() const
 
  // TODO: Implement
 	
-	for (ASteeringAgent* neighbor : Neighbors)
+	for (ASteeringAgent* neighbor : GetNeighbors())
 	{
 		avgVelocity += FVector2D(neighbor->GetVelocity().X, neighbor->GetVelocity().Y);
 	}
 	
-	avgVelocity /= NrOfNeighbors;
+	avgVelocity /= GetNrOfNeighbors();
 
 	return avgVelocity;
 }
