@@ -124,6 +124,8 @@ void CellSpace::RenderCells() const
 {
 	// TODO Render the cells with the number of agents inside of it
 	
+	FlushDebugStrings(pWorld);
+	
 	for (Cell c : Cells)
 	{
 		DrawDebugLine(pWorld, FVector(c.GetRectPoints()[0], 10.f), FVector(c.GetRectPoints()[1], 10.f), FColor::Blue);
