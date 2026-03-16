@@ -115,6 +115,7 @@ void ALevel_GraphTheory::UpdateAgentPath(std::vector<Node*> const& Trail)
 	{
 		Agent->SetPosition(path[0]);
 	}
+	
 }
 
 

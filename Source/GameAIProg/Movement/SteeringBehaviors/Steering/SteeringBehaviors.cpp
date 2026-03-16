@@ -2,6 +2,7 @@
 #include "DrawDebugHelpers.h"
 #include <ThirdParty/ShaderConductor/ShaderConductor/External/DirectXShaderCompiler/include/dxc/DXIL/DxilConstants.h>
 
+#include "RewindData.h"
 #include "VectorTypes.h"
 #include "GameAIProg/Movement/SteeringBehaviors/SteeringAgent.h"
 #include "GameFramework/GameNetworkManager.h"
@@ -43,6 +44,7 @@ void ISteeringBehavior::DrawDesiredDirection(const ASteeringAgent& Agent)
 SteeringOutput Seek::CalculateSteering(float DeltaT, ASteeringAgent & Agent)
 {
 	SteeringOutput Steering{};
+	Agent.SetMaxLinearSpeed(600);
 	
 	Steering.LinearVelocity = Target.Position - Agent.GetPosition();
 	//Steering.LinearVelocity.Normalize();
@@ -87,26 +89,27 @@ SteeringOutput Arrive::CalculateSteering(float DeltaT, ASteeringAgent & Agent)
 	SteeringOutput Steering{};
 	
 	constexpr float outerRadius{200.f};
-	constexpr float innerRadius{50.f};
+	const float innerRadius{_radius};
 	
-	const float distanceToTarget{static_cast<float>((Target.Position - Agent.GetPosition()).Length())};
+	const float distanceToTarget{static_cast<float>(FVector2D::Distance(Target.Position, Agent.GetPosition()))};
 	
-	Steering.LinearVelocity = Target.Position - Agent.GetPosition();
+	Agent.SetMaxLinearSpeed(600);
 	
-	constexpr float maxSpeed{700.f};
 	
-	if (distanceToTarget > outerRadius)
+	if (distanceToTarget >= outerRadius)
 	{
-		Agent.SetMaxLinearSpeed(maxSpeed);
+		Steering.LinearVelocity = Target.Position - Agent.GetPosition();
 	}
 	else if (distanceToTarget < innerRadius)
 	{
-		Agent.SetMaxLinearSpeed(0.f);
+		Steering.LinearVelocity = FVector2D::ZeroVector;
 	}
 	else if (distanceToTarget < outerRadius)
 	{
 		const float speedMultiplier{(distanceToTarget - innerRadius) / (outerRadius - innerRadius)};
-		Agent.SetMaxLinearSpeed(maxSpeed * speedMultiplier);
+		Agent.SetMaxLinearSpeed(Agent.GetMaxLinearSpeed() * speedMultiplier);
+		
+		Steering.LinearVelocity = Target.Position - Agent.GetPosition();
 	}
 	
 	if (Agent.GetDebugRenderingEnabled())
@@ -130,6 +133,11 @@ SteeringOutput Arrive::CalculateSteering(float DeltaT, ASteeringAgent & Agent)
 	
 	Steering.LinearVelocity.Normalize();
 	return Steering;
+}
+
+void Arrive::SetTargetRadius(const float radius)
+{
+	_radius = radius;
 }
 
 SteeringOutput Pursuit::CalculateSteering(float DeltaT, ASteeringAgent & Agent)

@@ -57,9 +57,11 @@ public:
 	virtual ~Arrive() = default;
 	
 	virtual SteeringOutput CalculateSteering(float DeltaT, ASteeringAgent & Agent) override;
+	void SetTargetRadius(const float radius);
 	
 private:
 	float MaxSpeed;
+	float _radius{};
 };
 
 class Pursuit : public ISteeringBehavior
