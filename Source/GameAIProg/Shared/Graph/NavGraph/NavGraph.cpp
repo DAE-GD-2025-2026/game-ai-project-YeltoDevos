@@ -60,7 +60,7 @@ void GameAI::NavGraph::CreateNavigationGraph()
 		if (idx.has_value())
 		{
 			const auto triangles {pNavPoly->GetTriangleNeighbors(idx.value())};
-			//if (triangles.size() > 1)
+			//if (triangles.size() > 0)
 			{
 				const auto p1{edge.GetP1(*pNavPoly)};
 				const auto p2{edge.GetP2(*pNavPoly)};
@@ -96,7 +96,6 @@ void GameAI::NavGraph::CreateNavigationGraph()
 				{
 					tmpNodeIds.emplace_back(GetNodeIdFromEdgeIndex(idx.value()));
 				}
-				
 			}
 		}
 		

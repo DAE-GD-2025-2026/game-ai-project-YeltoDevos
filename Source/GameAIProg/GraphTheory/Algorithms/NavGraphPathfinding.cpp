@@ -15,8 +15,8 @@ std::vector<FVector2D> NavMeshPathfinding::FindPath(const FVector2D& startPos, c
 	std::vector<FVector2D> finalPath{};
 
 	//Get the start and endTriangle
-	const auto& startTriangle {pNavGraph->GetNavPolygon()->GetTriangleAtPosition(startPos, false)};
-	const auto& endTriangle{pNavGraph->GetNavPolygon()->GetTriangleAtPosition(endPos, false)};
+	const auto& startTriangle {pNavGraph->GetNavPolygon()->GetTriangleAtPosition(startPos, true)};
+	const auto& endTriangle{pNavGraph->GetNavPolygon()->GetTriangleAtPosition(endPos, true)};
 	
 	if (startTriangle == nullptr || endTriangle == nullptr)
 	{
@@ -33,14 +33,92 @@ std::vector<FVector2D> NavMeshPathfinding::FindPath(const FVector2D& startPos, c
 	//We have valid start/end triangles and they are not the same
 	//=> Start looking for a path
 	//Copy the graph
+	std::shared_ptr<NavGraph> pCopyGraph(pNavGraph->Clone());
 
 	//Create Extra node for the Start Node (Agent's position
+	const int startNodeId = pCopyGraph->AddNode(std::make_unique<NavGraphNode>(startPos, -1));
+	
+	for (const auto& edge : startTriangle->GetEdges())
+	{
+		auto idx {pNavGraph->GetNavPolygon()->FindEdgeIndex(edge)};
+		
+		if (idx.has_value())
+		{
+			auto edgeNodeId{pCopyGraph->GetNodeIdFromEdgeIndex(idx.value())};
+			if (edgeNodeId == Graphs::InvalidNodeId)
+				continue;
+			
+			pCopyGraph->AddConnection(startNodeId, edgeNodeId);
+			
+			if (Connection* pConn = pCopyGraph->FindConnection(startNodeId, edgeNodeId))
+			{
+				const FVector2D weight =
+					pCopyGraph->GetNode(startNodeId)->GetPosition() -
+					pCopyGraph->GetNode(edgeNodeId)->GetPosition();
+				pConn->SetWeight(weight.Length());
+			}
+			
+			if (Connection* pConn = pCopyGraph->FindConnection(edgeNodeId, startNodeId))
+			{
+				const FVector2D weight =
+					pCopyGraph->GetNode(edgeNodeId)->GetPosition() -
+					pCopyGraph->GetNode(startNodeId)->GetPosition();
+				pConn->SetWeight(weight.Length());
+			}
+		}
+	}
 
 	//Create extra node for the endNode
+	const int endNodeId = pCopyGraph->AddNode(std::make_unique<NavGraphNode>(endPos, -1));
+	
+	for (const auto& edge : endTriangle->GetEdges())
+	{
+		auto idx {pNavGraph->GetNavPolygon()->FindEdgeIndex(edge)};
+		
+		if (idx.has_value())
+		{
+			auto edgeNodeId{pCopyGraph->GetNodeIdFromEdgeIndex(idx.value())};
+			if (edgeNodeId == Graphs::InvalidNodeId)
+				continue;
+			
+			pCopyGraph->AddConnection(endNodeId, edgeNodeId);
+			
+			if (Connection* pConn = pCopyGraph->FindConnection(endNodeId, edgeNodeId))
+			{
+				const FVector2D weight =
+					pCopyGraph->GetNode(endNodeId)->GetPosition() -
+					pCopyGraph->GetNode(edgeNodeId)->GetPosition();
+				pConn->SetWeight(weight.Length());
+			}
+			if (Connection* pConn = pCopyGraph->FindConnection(edgeNodeId, endNodeId))
+			{
+				const FVector2D weight =
+					pCopyGraph->GetNode(edgeNodeId)->GetPosition() -
+					pCopyGraph->GetNode(endNodeId)->GetPosition();
+				pConn->SetWeight(weight.Length());
+			}
+		}
+	}
+	
 
 	//Run A star on new graph
-
+	AStar astar{pCopyGraph.get(), HeuristicFunctions::Chebyshev};
+	
+	auto nodePath {astar.FindPath(
+		pCopyGraph->GetNode(startNodeId).get(),
+		pCopyGraph->GetNode(endNodeId).get()
+		)};
+	
+	std::vector<FVector2D> path{};
+	
+	for (const auto& node : nodePath)
+	{
+		path.push_back(node->GetPosition());
+	}
+	
+	finalPath = path;
 	//Debug Visualisation
+	debugNodePositions = path;
 
 	// Extra: Run optimiser on new graph (First check if everything works without SSFA!)
 	// debugPortals = SSFA::FindPortals(nodes, *pNavGraph->GetNavPolygon());

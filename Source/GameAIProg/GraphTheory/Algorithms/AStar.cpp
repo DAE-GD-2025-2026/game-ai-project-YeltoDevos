@@ -39,6 +39,7 @@ std::vector<Node*>AStar::FindPath(Node* const pStartNode, Node* const pGoalNode)
 			Node* pNextNode {pGraph->GetNode(connection->GetToId()).get()};
 			const float totalGCost {currentRecord.costSoFar + connection->GetWeight()};
 			
+			
 			auto nodeItClosed = std::find_if(closedList.begin(), closedList.end(), 
 			[pNextNode](const NodeRecord& record)
 			{
