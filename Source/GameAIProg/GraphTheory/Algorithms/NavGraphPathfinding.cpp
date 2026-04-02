@@ -48,23 +48,14 @@ std::vector<FVector2D> NavMeshPathfinding::FindPath(const FVector2D& startPos, c
 			if (edgeNodeId == Graphs::InvalidNodeId)
 				continue;
 			
-			pCopyGraph->AddConnection(startNodeId, edgeNodeId);
+			Connection conn{startNodeId, edgeNodeId};
 			
-			if (Connection* pConn = pCopyGraph->FindConnection(startNodeId, edgeNodeId))
-			{
-				const FVector2D weight =
-					pCopyGraph->GetNode(startNodeId)->GetPosition() -
-					pCopyGraph->GetNode(edgeNodeId)->GetPosition();
-				pConn->SetWeight(weight.Length());
-			}
+			const FVector2D weight =
+			pCopyGraph->GetNode(startNodeId)->GetPosition() -
+			pCopyGraph->GetNode(edgeNodeId)->GetPosition();
+			conn.SetWeight(weight.Length());
 			
-			if (Connection* pConn = pCopyGraph->FindConnection(edgeNodeId, startNodeId))
-			{
-				const FVector2D weight =
-					pCopyGraph->GetNode(edgeNodeId)->GetPosition() -
-					pCopyGraph->GetNode(startNodeId)->GetPosition();
-				pConn->SetWeight(weight.Length());
-			}
+			pCopyGraph->AddConnection(std::make_unique<Connection>(conn));
 		}
 	}
 
@@ -81,22 +72,14 @@ std::vector<FVector2D> NavMeshPathfinding::FindPath(const FVector2D& startPos, c
 			if (edgeNodeId == Graphs::InvalidNodeId)
 				continue;
 			
-			pCopyGraph->AddConnection(endNodeId, edgeNodeId);
+			Connection conn{endNodeId, edgeNodeId};
 			
-			if (Connection* pConn = pCopyGraph->FindConnection(endNodeId, edgeNodeId))
-			{
-				const FVector2D weight =
-					pCopyGraph->GetNode(endNodeId)->GetPosition() -
-					pCopyGraph->GetNode(edgeNodeId)->GetPosition();
-				pConn->SetWeight(weight.Length());
-			}
-			if (Connection* pConn = pCopyGraph->FindConnection(edgeNodeId, endNodeId))
-			{
-				const FVector2D weight =
-					pCopyGraph->GetNode(edgeNodeId)->GetPosition() -
-					pCopyGraph->GetNode(endNodeId)->GetPosition();
-				pConn->SetWeight(weight.Length());
-			}
+			const FVector2D weight =
+			pCopyGraph->GetNode(endNodeId)->GetPosition() -
+			pCopyGraph->GetNode(edgeNodeId)->GetPosition();
+			conn.SetWeight(weight.Length());
+			
+			pCopyGraph->AddConnection(std::make_unique<Connection>(conn));
 		}
 	}
 	
@@ -121,8 +104,8 @@ std::vector<FVector2D> NavMeshPathfinding::FindPath(const FVector2D& startPos, c
 	debugNodePositions = path;
 
 	// Extra: Run optimiser on new graph (First check if everything works without SSFA!)
-	// debugPortals = SSFA::FindPortals(nodes, *pNavGraph->GetNavPolygon());
-	// finalPath = SSFA::OptimizePortals(debugPortals, *pNavGraph->GetNavPolygon());
+	debugPortals = SSFA::FindPortals(nodePath, *pNavGraph->GetNavPolygon());
+	//finalPath = SSFA::OptimizePortals(debugPortals, *pNavGraph->GetNavPolygon());
 	
 	return finalPath;
 }

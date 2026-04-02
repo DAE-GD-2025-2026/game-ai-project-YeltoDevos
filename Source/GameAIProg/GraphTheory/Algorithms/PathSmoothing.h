@@ -2,6 +2,7 @@
 #include <vector>
 
 #include "NavGraphPathfinding.h"
+#include "StaticMeshAttributes.h"
 #include "Movement/Pathfinding/Navmesh/TriPolygon.h"
 #include "Shared/Graph/Graph.h"
 #include "Shared/Graph/NavGraph/NavGraphNode.h"
@@ -22,11 +23,33 @@ public:
 		
 		//For each node received, get it's corresponding line
 		
+		const std::vector<TriPolygon::Edge>& edges {NavPoly.GetEdges()};
+		
+		for (int idx{0}; idx < Path.size() - 1; ++idx)
+		{
+			const auto edge{edges[Path[idx]->GetId()]};
+			
 			//Redetermine it's "orientation" based on the required path (left-right vs right-left) - p1 should be right point
-
+			FVector2D P1{edge.GetP1(NavPoly).X, edge.GetP1(NavPoly).Y};
+			FVector2D P2{edge.GetP2(NavPoly).X, edge.GetP2(NavPoly).Y};
+			
+			FVector2D direction{Path[idx + 1]->GetPosition() - Path[idx]->GetPosition()};
+			
+			auto value = FVector2D::CrossProduct(P1 - Path[idx]->GetPosition(), direction);
+			
 			//Store portal
+			if (value >= 0)
+			{
+				Portals.emplace_back(P1, P2);
+			}
+			else
+			{
+				Portals.emplace_back(P2, P1);
+			}
+		}
 
 		//Add degenerate portal to force end evaluation
+		Portals.emplace_back(Path[Path.size() - 1]->GetPosition(), Path[Path.size() - 1]->GetPosition());
 
 		return Portals;
 	}
