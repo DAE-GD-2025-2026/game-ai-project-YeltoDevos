@@ -106,7 +106,7 @@ void ALevel_Navmesh::Tick(float DeltaTime)
 					GetWorld(), 
 					FVector{portal.P1, 5.0f}, 
 					FVector{portal.P2, 5.0f}, 
-					FColor::Magenta, false, -1, 1, 10);
+					FColor::Cyan, false, -1, 1, 10);
 		}
 	}
 	

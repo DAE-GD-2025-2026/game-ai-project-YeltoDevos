@@ -22,10 +22,11 @@ public:
 		std::vector<NavLine> Portals = {};
 		
 		//For each node received, get it's corresponding line
+		Portals.emplace_back(Path[0]->GetPosition(), Path[0]->GetPosition());
 		
 		const std::vector<TriPolygon::Edge>& edges {NavPoly.GetEdges()};
 		
-		for (int idx{0}; idx < Path.size() - 1; ++idx)
+		for (int idx{1}; idx < Path.size() - 1; ++idx)
 		{
 			const auto edge{edges[Path[idx]->GetId()]};
 			
@@ -57,29 +58,79 @@ public:
 	static std::vector<FVector2D> OptimizePortals( std::vector<NavLine> const & Portals, TriPolygon const & NavPoly)
 	{
 		std::vector<FVector2D> Path{};
-		//P1 == right point of portal, P2 == left point of portal
 		
-			//--- RIGHT CHECK ---
-			//1. See if moving funnel inwards - RIGHT
+		Path.emplace_back(Portals[0].P1);
+		
+		int rightLegIdx{1};
+		int leftLegIdx{1};
+		FVector2D rightLeg{Portals[rightLegIdx].P1 - Path[Path.size() - 1]};
+		FVector2D leftLeg{Portals[leftLegIdx].P2 - Path[Path.size() - 1]};
+
+		
+		//P1 == right point of portal, P2 == left point of portal
+		for (int portalIdx{1}; portalIdx < Portals.size() ; ++portalIdx)
+		{
+			NavLine currentPortal = Portals[portalIdx];
 			
-				//2. See if new line degenerates a line segment - RIGHT
-				
-					//Leftleg becomes new apex point
-
-					//Calculate new legs (if not the end)
-
-
+			//--- RIGHT CHECK ---
+			FVector2D newRightLeg{currentPortal.P1 - Path[Path.size() - 1]};
+			
+			auto crossResult{FVector2D::CrossProduct(rightLeg, newRightLeg)};
+			if (crossResult > 0)
+			{
+				auto crossLeftLeg{FVector2D::CrossProduct(leftLeg, newRightLeg)};
+				if (crossLeftLeg >= 0)
+				{
+					Path.emplace_back(Portals[leftLegIdx].P2);
+					portalIdx = leftLegIdx + 1;
+					leftLegIdx = portalIdx;
+					rightLegIdx = portalIdx;
+					
+					if(portalIdx < Portals.size())
+					{
+						rightLeg=Portals[rightLegIdx].P1 - Path[Path.size() - 1];
+						leftLeg=Portals[leftLegIdx].P2 - Path[Path.size() - 1];
+						continue;
+					}
+				}
+				else
+				{
+					rightLeg = newRightLeg;
+					rightLegIdx = portalIdx;
+				}
+			}
+			
 			//--- LEFT CHECK ---
-			//1. See if moving funnel inwards - LEFT
-
-				//2. See if new line degenerates a line segment - LEFT
-
-					//Rightleg becomes new apex point
-
-					//Calculate new legs (if not the end)
-
-
+			FVector2D newLeftLeg{currentPortal.P2 - Path[Path.size() - 1]};
+			
+			crossResult = FVector2D::CrossProduct(leftLeg, newLeftLeg);
+			if (crossResult < 0)
+			{
+				auto crossLeftLeg{FVector2D::CrossProduct(rightLeg, newLeftLeg)};
+				if (crossLeftLeg <= 0)
+				{
+					Path.emplace_back(Portals[rightLegIdx].P1);
+					portalIdx = rightLegIdx + 1;
+					rightLegIdx = portalIdx;
+					leftLegIdx = portalIdx;
+					
+					if(portalIdx < Portals.size())
+					{
+						rightLeg=Portals[rightLegIdx].P1 - Path[Path.size() - 1];
+						leftLeg=Portals[leftLegIdx].P2 - Path[Path.size() - 1];
+						continue;
+					}
+				}
+				else
+				{
+					leftLeg = newLeftLeg;
+					leftLegIdx = portalIdx;
+				}
+			}
+		}
+		
 		// Add last path point
+		Path.emplace_back(Portals[Portals.size() - 1].P1);
 
 		return Path;
 	}
