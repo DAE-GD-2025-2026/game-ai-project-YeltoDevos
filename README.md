@@ -1,3 +1,4 @@
-# Game AI Project
+## Extra Assignment
 
-Feel free to edit the readme to your liking
+Week02 - Combined Steering  
+Make the wolfpack behaviour
