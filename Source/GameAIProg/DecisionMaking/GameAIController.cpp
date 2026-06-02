@@ -5,6 +5,7 @@
 
 #include "BehaviorTree/BlackboardComponent.h"
 #include "FSM/FSMComponent.h"
+#include "Movement/SteeringBehaviors/SteeringAgent.h"
 
 
 // Sets default values

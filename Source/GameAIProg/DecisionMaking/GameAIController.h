@@ -6,6 +6,8 @@
 #include "AIController.h"
 #include "GameAIController.generated.h"
 
+class ASteeringAgent;
+
 UCLASS()
 class GAMEAIPROG_API AGameAIController : public AAIController
 {
