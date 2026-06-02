@@ -13,7 +13,7 @@
 #include "../SpacePartitioning/SpacePartitioning.h"
 #endif
 
-class Flock final
+class Flock
 {
 public:
 	Flock(
@@ -24,17 +24,17 @@ public:
 	ASteeringAgent* const pAgentToEvade = nullptr, 
 	bool bTrimWorld = false);
 
-	~Flock();
+	virtual ~Flock();
 
-	void Tick(float DeltaTime);
-	void RenderDebug();
-	void ImGuiRender(ImVec2 const& WindowPos, ImVec2 const& WindowSize);
+	virtual void Tick(float DeltaTime);
+	virtual void RenderDebug();
+	virtual void ImGuiRender(ImVec2 const& WindowPos, ImVec2 const& WindowSize);
 
 #ifdef GAMEAI_USE_SPACE_PARTITIONING
-	const TArray<ASteeringAgent*>& GetNeighbors() const { return Neighbors; }
-	int GetNrOfNeighbors() const { return NrOfNeighbors; }
+	virtual const TArray<ASteeringAgent*>& GetNeighbors() const { return Neighbors; }
+	virtual int GetNrOfNeighbors() const { return NrOfNeighbors; }
 	
-	void RegisterNeighbors(ASteeringAgent* const Agent);
+	virtual void RegisterNeighbors(ASteeringAgent* const Agent);
 	
 #else // No space partitioning
 	int GetNrOfNeighbors() const { return NrOfNeighbors; }
@@ -42,12 +42,12 @@ public:
 	
 #endif // USE_SPACE_PARTITIONING
 
-	FVector2D GetAverageNeighborPos() const;
-	FVector2D GetAverageNeighborVelocity() const;
+	virtual FVector2D GetAverageNeighborPos() const;
+	virtual FVector2D GetAverageNeighborVelocity() const;
 
-	void SetTarget_Seek(FSteeringParams const & Target);
+	virtual void SetTarget_Seek(FSteeringParams const & Target);
 
-private:
+protected:
 	// For debug rendering purposes
 	UWorld* pWorld{nullptr};
 	
@@ -83,10 +83,10 @@ private:
 	std::unique_ptr<PrioritySteering> pPrioritySteering{};
 
 	// UI and rendering
-	bool UseSpatialPartition{true};
+	bool UseSpatialPartition{false};
 	bool DebugRenderSteering{false};
 	bool DebugRenderNeighborhood{true};
 	bool DebugRenderPartitions{true};
 
-	void RenderNeighborhood();
+	virtual void RenderNeighborhood();
 };

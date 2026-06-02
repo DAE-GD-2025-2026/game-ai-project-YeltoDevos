@@ -16,11 +16,39 @@ void ALevel_Wolfpack::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	TrimWorld->SetTrimWorldSize(1500.f);
+	TrimWorld->bShouldTrimWorld = true;
+	
+	ChaseSteeringBehavior = new Arrive();
+	pAgentToChase = GetWorld()->SpawnActor<ASteeringAgent>(SteeringAgentClass, FVector{ 0,0,90 }, FRotator::ZeroRotator);
+	pAgentToChase->SetSteeringBehavior(ChaseSteeringBehavior);
+
+	pFlock = TUniquePtr<WolfPackFlock>(
+		new WolfPackFlock(
+			GetWorld(),
+			SteeringAgentClass,
+			FlockSize,
+			TrimWorld->GetTrimWorldSize(),
+			pAgentToChase,
+			true)
+			);
+	
+	pFlock->SetTarget_Seek(FTargetData(pAgentToChase->GetPosition()));
 }
 
 // Called every frame
 void ALevel_Wolfpack::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	
+	pFlock->ImGuiRender(WindowPos, WindowSize);
+	pFlock->Tick(DeltaTime);
+	pFlock->RenderDebug();
+	pFlock->SetTarget_Seek(FTargetData(pAgentToChase->GetPosition()));
+	
+	if (bUseMouseTarget)
+	{
+		ChaseSteeringBehavior->SetTarget(MouseTarget);
+	}
 }
 

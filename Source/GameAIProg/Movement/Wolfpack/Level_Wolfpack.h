@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "WolfpackFlock.h"
+#include "Movement/SteeringBehaviors/Flocking/Flock.h"
 #include "Shared/Level_Base.h"
 #include "Level_Wolfpack.generated.h"
 
@@ -15,11 +17,19 @@ public:
 	// Sets default values for this actor's properties
 	ALevel_Wolfpack();
 
+	virtual void Tick(float DeltaTime) override;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	
+	bool bUseMouseTarget{true};
 
-public:
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	int const FlockSize{5};
+
+	TUniquePtr<WolfPackFlock> pFlock{};
+	
+	UPROPERTY(EditAnywhere, Category = "Flocking")
+	ASteeringAgent* pAgentToChase{nullptr}; // non owning ref
+	
+	ISteeringBehavior* ChaseSteeringBehavior{nullptr};
 };

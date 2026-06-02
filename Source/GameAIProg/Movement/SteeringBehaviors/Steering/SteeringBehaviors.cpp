@@ -66,10 +66,11 @@ SteeringOutput Seek::CalculateSteering(float DeltaT, ASteeringAgent & Agent)
 
 SteeringOutput Flee::CalculateSteering(float DeltaT, ASteeringAgent & Agent)
 {
-	
+	const float distanceToTarget{static_cast<float>(FVector2D::Distance(Target.Position, Agent.GetPosition()))};
 	
 	
 	SteeringOutput Steering{};
+	if (distanceToTarget > _fleeDistance) return Steering;
 	
 	Steering.LinearVelocity = -(Target.Position - Agent.GetPosition());
 	
@@ -83,13 +84,18 @@ SteeringOutput Flee::CalculateSteering(float DeltaT, ASteeringAgent & Agent)
 	return Steering;
 }
 
+void Flee::SetFleeDistance(const float distance)
+{
+	_fleeDistance = distance;
+}
+
 
 SteeringOutput Arrive::CalculateSteering(float DeltaT, ASteeringAgent & Agent)
 {
 	SteeringOutput Steering{};
 	
-	constexpr float outerRadius{200.f};
-	const float innerRadius{_radius};
+	const float outerRadius{_maxRadius};
+	const float innerRadius{_minRadius};
 	
 	const float distanceToTarget{static_cast<float>(FVector2D::Distance(Target.Position, Agent.GetPosition()))};
 	
@@ -137,7 +143,12 @@ SteeringOutput Arrive::CalculateSteering(float DeltaT, ASteeringAgent & Agent)
 
 void Arrive::SetTargetRadius(const float radius)
 {
-	_radius = radius;
+	_minRadius = radius;
+}
+
+void Arrive::SetTargetMaxRadius(const float radius)
+{
+	_maxRadius = radius;
 }
 
 SteeringOutput Pursuit::CalculateSteering(float DeltaT, ASteeringAgent & Agent)
